@@ -4,6 +4,10 @@ import pytest
 from app import app
 from models import db, User, Recipe
 
+# Ensure tables exist before tests run
+with app.app_context():
+    db.create_all()
+
 class TestUser:
     '''User in models.py'''
 

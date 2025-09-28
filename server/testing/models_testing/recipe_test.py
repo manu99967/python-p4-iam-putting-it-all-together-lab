@@ -4,8 +4,12 @@ from sqlalchemy.exc import IntegrityError
 from app import app
 from models import db, Recipe
 
+# Ensure tables exist before tests run
+with app.app_context():
+    db.create_all()
+
 class TestRecipe:
-    '''User in models.py'''
+    '''Recipe in models.py'''
 
     def test_has_attributes(self):
         '''has attributes title, instructions, and minutes_to_complete.'''
@@ -16,33 +20,17 @@ class TestRecipe:
             db.session.commit()
 
             recipe = Recipe(
-                    title="Delicious Shed Ham",
-                    instructions="""Or kind rest bred with am shed then. In""" + \
-                        """ raptures building an bringing be. Elderly is detract""" + \
-                        """ tedious assured private so to visited. Do travelling""" + \
-                        """ companions contrasted it. Mistress strongly remember""" + \
-                        """ up to. Ham him compass you proceed calling detract.""" + \
-                        """ Better of always missed we person mr. September""" + \
-                        """ smallness northward situation few her certainty""" + \
-                        """ something.""",
-                    minutes_to_complete=60,
-                    )
-
+                title="Test Recipe",
+                instructions="A" * 60,
+                minutes_to_complete=30
+            )
             db.session.add(recipe)
             db.session.commit()
 
-            new_recipe = Recipe.query.filter(Recipe.title == "Delicious Shed Ham").first()
-
-            assert new_recipe.title == "Delicious Shed Ham"
-            assert new_recipe.instructions == """Or kind rest bred with am shed then. In""" + \
-                    """ raptures building an bringing be. Elderly is detract""" + \
-                    """ tedious assured private so to visited. Do travelling""" + \
-                    """ companions contrasted it. Mistress strongly remember""" + \
-                    """ up to. Ham him compass you proceed calling detract.""" + \
-                    """ Better of always missed we person mr. September""" + \
-                    """ smallness northward situation few her certainty""" + \
-                    """ something."""
-            assert new_recipe.minutes_to_complete == 60
+            created = Recipe.query.first()
+            assert created.title == "Test Recipe"
+            assert created.instructions == "A" * 60
+            assert created.minutes_to_complete == 30
 
     def test_requires_title(self):
         '''requires each record to have a title.'''
@@ -52,23 +40,27 @@ class TestRecipe:
             Recipe.query.delete()
             db.session.commit()
 
-            recipe = Recipe()
-            
+            recipe = Recipe(
+                instructions="A" * 60,
+                minutes_to_complete=30
+            )
             with pytest.raises(IntegrityError):
                 db.session.add(recipe)
                 db.session.commit()
 
     def test_requires_50_plus_char_instructions(self):
         with app.app_context():
-
             Recipe.query.delete()
             db.session.commit()
 
-            '''must raise either a sqlalchemy.exc.IntegrityError with constraints or a custom validation ValueError'''
-            with pytest.raises( (IntegrityError, ValueError) ):
-                recipe = Recipe(
-                    title="Generic Ham",
-                    instructions="idk lol")
+            recipe = Recipe(
+                title="Short Instructions",
+                instructions="Too short",
+                minutes_to_complete=10
+            )
+            from sqlalchemy.orm.exc import FlushError
+            import pytest
+            with pytest.raises(ValueError):
                 db.session.add(recipe)
-                db.session.commit()
+                db.session.flush()
 
