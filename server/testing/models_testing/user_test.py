@@ -63,6 +63,7 @@ class TestUser:
             db.session.commit()
 
             user = User()
+            user.password_hash = "testpassword"
             with pytest.raises(IntegrityError):
                 db.session.add(user)
                 db.session.commit()
@@ -76,7 +77,9 @@ class TestUser:
             db.session.commit()
 
             user_1 = User(username="Ben")
+            user_1.password_hash = "password1"
             user_2 = User(username="Ben")
+            user_2.password_hash = "password2"
 
             with pytest.raises(IntegrityError):
                 db.session.add_all([user_1, user_2])
@@ -91,6 +94,7 @@ class TestUser:
             db.session.commit()
 
             user = User(username="Prabhdip")
+            user.password_hash = "testpassword"
 
             recipe_1 = Recipe(
                 title="Delicious Shed Ham",
